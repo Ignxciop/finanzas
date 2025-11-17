@@ -7,6 +7,8 @@ import TermsPage from '../../features/auth/pages/TermsPage';
 import PrivacyPage from '../../features/auth/pages/PrivacyPage';
 import ContactPage from '../../features/auth/pages/ContactPage';
 import HelpPage from '../../features/auth/pages/HelpPage';
+import DashboardPage from '../../features/dashboard/pages/DashboardPage';
+import ProtectedRoute from './ProtectedRoute';
 
 const AppRouter = () => {
   return (
@@ -18,6 +20,14 @@ const AppRouter = () => {
       <Route path="/privacidad" element={<PrivacyPage />} />
       <Route path="/contacto" element={<ContactPage />} />
       <Route path="/ayuda" element={<HelpPage />} />
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } 
+      />
     </Routes>
   );
 };

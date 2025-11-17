@@ -3,6 +3,7 @@ import { Email } from '../../domain/value-objects/Email.js';
 import { Password } from '../../domain/value-objects/Password.js';
 import { UserName } from '../../domain/value-objects/UserName.js';
 import { User as PrismaUser } from '@prisma/client';
+import { UserResponseDTO } from '../../application/dto/UserResponseDTO.js';
 
 export class UserMapper {
   static toDomain(prismaUser: PrismaUser): DomainUser {
@@ -24,4 +25,13 @@ export class UserMapper {
       password: domainUser.getPassword().getValue(),
     };
   }
+
+  static toDTO(domainUser: DomainUser): UserResponseDTO {
+    return {
+      id: domainUser.getId() || '',
+      name: domainUser.getName().getValue(),
+      email: domainUser.getEmail().getValue(),
+    };
+  }
 }
+

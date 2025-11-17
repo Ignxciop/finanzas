@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/authService';
 
 const RegisterForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -10,6 +12,8 @@ const RegisterForm = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,18 +57,42 @@ const RegisterForm = () => {
       newErrors.confirmPassword = 'Las contraseñas no coinciden';
     }
 
+    if (!acceptTerms) {
+      newErrors.terms = 'Debes aceptar los términos y condiciones';
+    }
+
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     const newErrors = validate();
     
     if (Object.keys(newErrors).length === 0) {
-      // Aquí irá la lógica de registro
-      console.log('Datos de registro:', formData);
-      // TODO: Conectar con la API
+      setLoading(true);
+      setErrors({});
+
+      try {
+        const result = await authService.register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
+
+        // Guardar token en localStorage
+        localStorage.setItem('token', result.data.token);
+        localStorage.setItem('user', JSON.stringify(result.data.user));
+
+        // Redirigir al dashboard
+        navigate('/dashboard');
+      } catch (error) {
+        setErrors({ 
+          submit: error.message || 'Error al crear la cuenta. Por favor intenta de nuevo.' 
+        });
+      } finally {
+        setLoading(false);
+      }
     } else {
       setErrors(newErrors);
     }
@@ -72,6 +100,13 @@ const RegisterForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Error general */}
+      {errors.submit && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {errors.submit}
+        </div>
+      )}
+
       {/* Nombre */}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -169,6 +204,8 @@ const RegisterForm = () => {
         <input
           type="checkbox"
           id="terms"
+          checked={acceptTerms}
+          onChange={(e) => setAcceptTerms(e.target.checked)}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
         />
         <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
@@ -182,13 +219,19 @@ const RegisterForm = () => {
           </Link>
         </label>
       </div>
+      {errors.terms && (
+        <p className="mt-1 text-sm text-red-500">{errors.terms}</p>
+      )}
 
       {/* Botón Submit */}
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 font-semibold"
+        disabled={loading}
+        className={`w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 font-semibold ${
+          loading ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
       >
-        Crear Cuenta
+        {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
       </button>
     </form>
   );

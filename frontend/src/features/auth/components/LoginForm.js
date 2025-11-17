@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/authService';
 
 const LoginForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,15 +45,34 @@ const LoginForm = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     const newErrors = validate();
     
     if (Object.keys(newErrors).length === 0) {
-      // Aquí irá la lógica de autenticación
-      console.log('Datos de login:', formData);
-      // TODO: Conectar con la API
+      setLoading(true);
+      setErrors({});
+
+      try {
+        const result = await authService.login({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        // Guardar token en localStorage
+        localStorage.setItem('token', result.data.token);
+        localStorage.setItem('user', JSON.stringify(result.data.user));
+
+        // Redirigir al dashboard
+        navigate('/dashboard');
+      } catch (error) {
+        setErrors({ 
+          submit: error.message || 'Error al iniciar sesión. Por favor intenta de nuevo.' 
+        });
+      } finally {
+        setLoading(false);
+      }
     } else {
       setErrors(newErrors);
     }
@@ -57,6 +80,13 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Error general */}
+      {errors.submit && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {errors.submit}
+        </div>
+      )}
+
       {/* Email */}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -123,9 +153,12 @@ const LoginForm = () => {
       {/* Botón Submit */}
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 font-semibold"
+        disabled={loading}
+        className={`w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 font-semibold ${
+          loading ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
       >
-        Iniciar Sesión
+        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
       </button>
     </form>
   );
