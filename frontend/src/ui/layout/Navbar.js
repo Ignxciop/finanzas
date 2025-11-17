@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   return (
@@ -7,7 +8,12 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo / Título */}
           <div className="flex-shrink-0">
-            <h1 className="text-white text-2xl font-bold">Finanzas</h1>
+            <Link 
+              to="/"
+              className="text-white text-2xl font-bold hover:text-blue-100 transition duration-300"
+            >
+              Finanzas
+            </Link>
           </div>
 
           {/* Botones centrales */}
@@ -28,12 +34,18 @@ const Navbar = () => {
 
           {/* Botones de autenticación */}
           <div className="flex space-x-3">
-            <button className="bg-white text-blue-600 hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium transition duration-300">
+            <Link 
+              to="/inicio-sesion"
+              className="bg-white text-blue-600 hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+            >
               Iniciar Sesión
-            </button>
-            <button className="bg-blue-500 text-white hover:bg-blue-400 px-4 py-2 rounded-md text-sm font-medium transition duration-300">
+            </Link>
+            <Link 
+              to="/registro"
+              className="bg-blue-500 text-white hover:bg-blue-400 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+            >
               Registrarse
-            </button>
+            </Link>
           </div>
         </div>
       </div>

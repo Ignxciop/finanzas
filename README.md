@@ -1,3 +1,3 @@
-## Finanzas
+# Finanzas
 
-# Seguimiento de sus finanzas
+## Seguimiento de sus finanzas
