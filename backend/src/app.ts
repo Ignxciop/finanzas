@@ -1,22 +1,24 @@
 import { createServer } from './interfaces/http/server.js';
 import { config } from './infrastructure/config/env.js';
+import { logger } from './infrastructure/logger/logger.js';
+import { CleanupService } from './infrastructure/services/CleanupService.js';
 
 const app = createServer();
 
 app.listen(config.port, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${config.port}`);
-  console.log(`📝 Entorno: ${config.nodeEnv}`);
-  console.log(`🔗 CORS permitido desde: ${config.cors.origin}`);
-  console.log(`\n✅ Backend listo para recibir peticiones`);
+  logger.info({ port: config.port, env: config.nodeEnv, cors: config.cors.origin }, 'Server started');
+  
+  // Iniciar servicio de limpieza automática
+  CleanupService.startScheduledCleanup();
 });
 
 // Manejo de errores no capturados
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promesa rechazada no manejada:', promise, 'razón:', reason);
+  logger.error({ reason, promise }, 'Unhandled rejection');
   process.exit(1);
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Excepción no capturada:', error);
+  logger.error({ error }, 'Uncaught exception');
   process.exit(1);
 });

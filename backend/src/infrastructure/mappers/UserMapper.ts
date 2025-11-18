@@ -23,6 +23,7 @@ export class UserMapper {
       name: domainUser.getName().getValue(),
       email: domainUser.getEmail().getValue(),
       password: domainUser.getPassword().getValue(),
+      emailVerified: false,
     };
   }
 

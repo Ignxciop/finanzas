@@ -25,6 +25,10 @@ class MockUserRepository implements IUserRepository {
     return this.users.some(u => u.getEmail().equals(email));
   }
 
+  async delete(id: string): Promise<void> {
+    this.users = this.users.filter(u => u.getId() !== id);
+  }
+
   clear() {
     this.users = [];
   }

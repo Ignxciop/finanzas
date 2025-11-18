@@ -6,6 +6,7 @@ import { AuthResponseDTO } from '../dto/AuthResponseDTO.js';
 import { HashService } from '../../infrastructure/security/hash.js';
 import { JwtService } from '../../infrastructure/security/jwt.js';
 import { UnauthorizedError, ValidationError } from '../../infrastructure/errors/AppError.js';
+import prisma from '../../infrastructure/db/prismaClient.js';
 
 export class LoginUserUseCase {
   constructor(private readonly userRepository: IUserRepository) {}
@@ -32,6 +33,16 @@ export class LoginUserUseCase {
 
     if (!isPasswordValid) {
       throw new UnauthorizedError('Credenciales inválidas');
+    }
+
+    // Verificar que el correo esté verificado
+    const userData = await prisma.user.findUnique({
+      where: { id: user.getId()! },
+      select: { emailVerified: true }
+    });
+
+    if (!userData?.emailVerified) {
+      throw new UnauthorizedError('Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada o solicita un nuevo correo de verificación.');
     }
 
     // Generar token JWT

@@ -16,6 +16,7 @@ describe('GetCurrentUserUseCase', () => {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       exists: jest.fn(),
+      delete: jest.fn(),
     } as jest.Mocked<IUserRepository>;
 
     useCase = new GetCurrentUserUseCase(mockUserRepository);

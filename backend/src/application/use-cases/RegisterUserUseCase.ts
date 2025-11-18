@@ -4,15 +4,18 @@ import { Email } from '../../domain/value-objects/Email.js';
 import { Password } from '../../domain/value-objects/Password.js';
 import { UserName } from '../../domain/value-objects/UserName.js';
 import { RegisterUserDTO } from '../dto/RegisterUserDTO.js';
-import { AuthResponseDTO } from '../dto/AuthResponseDTO.js';
+import { RegisterResponseDTO } from '../dto/RegisterResponseDTO.js';
 import { HashService } from '../../infrastructure/security/hash.js';
-import { JwtService } from '../../infrastructure/security/jwt.js';
 import { ConflictError, ValidationError } from '../../infrastructure/errors/AppError.js';
+import { emailService } from '../../infrastructure/services/EmailService.js';
+import { TokenGenerator } from '../../infrastructure/security/TokenGenerator.js';
+import prisma from '../../infrastructure/db/prismaClient.js';
+import { logger } from '../../infrastructure/logger/logger.js';
 
 export class RegisterUserUseCase {
   constructor(private readonly userRepository: IUserRepository) {}
 
-  async execute(dto: RegisterUserDTO): Promise<AuthResponseDTO> {
+  async execute(dto: RegisterUserDTO): Promise<RegisterResponseDTO> {
     // Validar datos de entrada
     this.validateInput(dto);
 
@@ -40,26 +43,48 @@ export class RegisterUserUseCase {
     // Guardar en la base de datos
     const savedUser = await this.userRepository.save(user);
 
-    // Generar token JWT
-    const token = JwtService.sign({
-      userId: savedUser.getId()!,
-      email: savedUser.getEmail().getValue(),
-    });
+    // Enviar email de verificación (no bloqueante)
+    this.sendVerificationEmailAsync(savedUser.getEmail().getValue(), savedUser.getId()!);
 
-    // Retornar respuesta
+    // Retornar respuesta sin token (requiere verificación de email primero)
     return {
       user: {
         id: savedUser.getId()!,
         name: savedUser.getName().getValue(),
         email: savedUser.getEmail().getValue(),
       },
-      token,
+      message: 'Registro exitoso. Por favor verifica tu correo electrónico para activar tu cuenta.',
     };
   }
 
   private validateInput(dto: RegisterUserDTO): void {
     if (!dto.name || !dto.email || !dto.password) {
       throw new ValidationError('Todos los campos son requeridos');
+    }
+  }
+
+  private async sendVerificationEmailAsync(email: string, userId: string): Promise<void> {
+    try {
+      // Generar token
+      const token = TokenGenerator.generate(32);
+      const expiresAt = TokenGenerator.createExpirationDate(24); // 24 horas
+
+      // Guardar token en BD
+      await prisma.verificationToken.create({
+        data: {
+          token,
+          type: 'EMAIL_VERIFICATION',
+          userId,
+          expiresAt,
+        },
+      });
+
+      // Enviar email
+      await emailService.sendVerificationEmail(email, token);
+      logger.info(`Email de verificación enviado automáticamente a: ${email}`);
+    } catch (error) {
+      // No fallar el registro si falla el email
+      logger.error(`Error al enviar email de verificación durante registro: ${error}`);
     }
   }
 }

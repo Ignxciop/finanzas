@@ -78,8 +78,20 @@ npm run prisma:studio
 
 ### Auth
 - `POST /api/auth/register` - Registrar nuevo usuario
+- `POST /api/auth/login` - Iniciar sesión
+- `GET /api/auth/me` - Obtener usuario actual (requiere autenticación)
+- `DELETE /api/auth/account` - Eliminar cuenta (requiere autenticación)
 
-**Body:**
+### Email
+- `POST /api/email/send-verification` - Enviar email de verificación
+- `POST /api/email/verify` - Verificar email con token
+- `POST /api/email/forgot-password` - Solicitar recuperación de contraseña
+- `POST /api/email/reset-password` - Restablecer contraseña con token
+
+### Cleanup (Mantenimiento)
+- `POST /api/cleanup/run` - Ejecutar limpieza manual de usuarios no verificados
+
+**Register Body:**
 ```json
 {
   "name": "José Núñez",
@@ -88,7 +100,7 @@ npm run prisma:studio
 }
 ```
 
-**Response:**
+**Register Response:**
 ```json
 {
   "success": true,
@@ -98,7 +110,7 @@ npm run prisma:studio
       "name": "José Núñez",
       "email": "jose@example.com"
     },
-    "token": "jwt_token"
+    "message": "Registro exitoso. Por favor verifica tu correo electrónico para activar tu cuenta."
   }
 }
 ```
@@ -151,6 +163,31 @@ backend/
 - Autenticación JWT
 - Validación de datos en value objects
 - CORS configurado
+- Rate limiting en endpoints sensibles
+- Verificación obligatoria de email antes de iniciar sesión
+
+## 🧹 Limpieza Automática
+
+El sistema incluye un servicio de limpieza automática que:
+
+- **Ejecuta cada hora** para mantener la base de datos limpia
+- **Elimina usuarios no verificados** después de 24 horas de su registro
+- **Elimina tokens expirados** (email verificación y recuperación de contraseña)
+- **Se inicia automáticamente** cuando el servidor arranca
+- **Puede ejecutarse manualmente** mediante el endpoint `POST /api/cleanup/run`
+
+**Configuración:**
+- Intervalo de ejecución: 60 minutos
+- Tiempo límite para verificación: 24 horas
+- Los tokens de verificación expiran a las 24 horas
+- Los tokens de recuperación de contraseña expiran a la 1 hora
+
+**Logs:**
+El servicio registra en los logs:
+- Cantidad de usuarios eliminados
+- Emails de los usuarios eliminados
+- Cantidad de tokens expirados eliminados
+- Horario de cada ejecución
 
 ## 👨‍💻 Desarrollador
 
